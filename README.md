@@ -1,5 +1,5 @@
 # mRNACalc
-mRNA extinction coefficient and concentration calculator.
+An mRNA extinction coefficient and concentration calculator.
 
 This webserver provides a tool for calculating the extinction coefficient (ε260) for RNA molecules with standard nucleobases (A,G,C and U), pseudouridine (Ψ), and N1-methylpseudoUridine (m1Ψ).
 The parameters for calculating the ε260 and molecular weight of an RNA can be found at the bottom of this webserver.
