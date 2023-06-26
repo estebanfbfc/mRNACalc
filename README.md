@@ -6,4 +6,4 @@ The parameters for calculating the ε260 and molecular weight of an RNA can be f
 An experimental protocol is provided, along with the required calculating tools, for measuring the 260 nm absorbance of mRNAs and calculating mRNA concentrations.
 This protocol for photometric measurement of RNA concentrations is based on the intrinsic absorptivity properties of single monophosphate nucleotides.
 
-If you use this protocol and webserver, please cite: NAR citation
+If you use this protocol and webserver, please cite: Reference to be added here
