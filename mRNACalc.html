@@ -6,21 +6,23 @@
 	<title>
 			mRNA concentration calculator
 	</title>
+		<link rel="icon" type="image/x-icon" href="/images/favicon.svg">
 		<meta name="viewport" content="width=device-width, initial-scale=1">
 		<meta charset="utf-8">
 		<meta name="description" content="Caculate extinction coefficient for mRNAs with pseudoUridine and N1-MethylpseudoUridine"/>
 	<style type="text/css">
 			body{text-align: center;font-family: 'D-DIN', sans-serif;font-size: 1em;}
-			#top_div{width:100%;top:0px;left: 0px; background-color: teal;}	
+			#top_div{width:100%;top:0px;left: 0px; background-color: teal;}
 			h1{text-align: center;font-family: 'D-DIN', sans-serif;}
 			h2{text-align: left;font-family: 'D-DIN', sans-serif;font-size: 1em;}
 			h3{text-align: left;font-family: 'D-DIN', sans-serif;font-size: 1em;}
-			input{text-align: right;font-family: 'D-DIN', sans-serif;font-size: 1em;}
+			input{text-align: right;font-family: 'D-DIN', sans-serif;font-size: 1.5em;}
 			#protocol{text-align: left;font-family: 'D-DIN', sans-serif;font-size: 1em;}
 			.title{font-size: 4em;width: 100%; color: white;}
 			button{font-family: 'D-DIN', sans-serif;color : teal;}
 			.wrapper{width: 90%;margin: auto;text-align: left;padding: 0.6%; display: none;}
 			#content{width: 90%; margin: auto;}
+			input[type=radio] { border: 0px; width: 3%; height: 2.5em;}
 </style>
 
 <script language="JavaScript">function developModel(){
@@ -54,7 +56,8 @@ function linearRegression(x_values, y_values){
   slope = slope_numerator/slope_denominator;
   console.log(slope);
   regressor['slope'] = slope;
-  document.WebTool.absorbance.value = slope;
+  sloperounded = Math.round(slope * 1000) / 1000
+  document.WebTool.absorbance.value = sloperounded;
   
   //Equation to solve for intercept
   var intercept = y_mean - x_mean*slope;
@@ -94,7 +97,7 @@ function plotRegressionChart(x_values, y_values, y_hat, r2){
       data: {
           datasets: [{
               type: 'scatter',
-              label: 'True Values',
+              label: 'A260',
               data: y_values,
          backgroundColor: 'rgb(0, 0, 0)',
           }, {
@@ -109,11 +112,27 @@ function plotRegressionChart(x_values, y_values, y_hat, r2){
 	  options: {
     scales: {
       y: {
-        beginAtZero: true
-      },
+        beginAtZero: true,
+		title: {
+        display: true,
+        text: '260 nm Absorbance',
+		font: {
+              size: 20,
+              family:'Arial'
+              }
+		}
+	  },
 	  x: {
         beginAtZero: true,
-		suggestedMax: 0.05
+		suggestedMax: 0.05,
+		title: {
+        display: true,
+        text: 'Dilution factor',
+		font: {
+              size: 20,
+              family:'Arial'
+              }
+		}
       }
     }
   }
@@ -135,17 +154,16 @@ function plotRegressionChart(x_values, y_values, y_hat, r2){
 }
 </script>
 <script language="JavaScript">function ExtCoeff() { 
-
 	var seq = document.WebTool.seq.value
 	var seqLowerCase = seq.toLowerCase(); // set sequence to lower case
 	var absorbance = document.WebTool.absorbance.value;
 	var pathlength = document.WebTool.pathlength.value;
+	var mRNAcap_Epsilon260, mRNAcap_MW;
 	var totalStockVol = document.WebTool.totalStockVol.value;
-	var numAs = 0, numCs = 0, numGs = 0, numUs = 0, numm1Ws = 0, numWs = 0;
-	var aExtCoeff = document.parameters.aEC.value, cExtCoeff = document.parameters.cEC.value, gExtCoeff = document.parameters.gEC.value, uExtCoeff = document.parameters.uEC.value, wExtCoeff = document.parameters.wEC.value, m1wExtCoeff = document.parameters.yEC.value;
-	var aMW = document.parameters.aMW.value, cMW = document.parameters.cMW.value, gMW = document.parameters.gMW.value, uMW = document.parameters.uMW.value, wMW = document.parameters.wMW.value, m1wMW = document.parameters.yMW.value;
+	var numAs = 0, numCs = 0, numGs = 0, numUs = 0, numm1Ws = 0, numWs = 0, numMs = 0;
+	var aExtCoeff = document.parameters.aEC.value, cExtCoeff = document.parameters.cEC.value, gExtCoeff = document.parameters.gEC.value, uExtCoeff = document.parameters.uEC.value, wExtCoeff = document.parameters.wEC.value, mExtCoeff = document.parameters.mEC.value, m1wExtCoeff = document.parameters.yEC.value, GP3GExtCoeff = document.parameters.GP3GEC.value, m7GP3GExtCoeff = document.parameters.m7GP3GEC.value, ARCAExtCoeff = document.parameters.ARCAEC.value, AP3GExtCoeff = document.parameters.AP3GEC.value, m3227GP3GExtCoeff = document.parameters.m3227GP3GEC.value, GP3AExtCoeff = document.parameters.GP3AEC.value, m7GP3AExtCoeff = document.parameters.m7GP3AEC.value, m7GP3m2OAExtCoeff = document.parameters.m7GP3m2OAEC.value, m3227GP3AExtCoeff = document.parameters.m3227GP3AEC.value, ARCAanalogExtCoeff = document.parameters.ARCAanalogEC.value;
+	var aMW = document.parameters.aMW.value, cMW = document.parameters.cMW.value, gMW = document.parameters.gMW.value, uMW = document.parameters.uMW.value, wMW = document.parameters.wMW.value, mMW = document.parameters.mMW.value, m1wMW = document.parameters.yMW.value, GP3GMW = document.parameters.GP3GMW.value, m7GP3GMW = document.parameters.m7GP3GMW.value, ARCAMW = document.parameters.ARCAMW.value, AP3GMW = document.parameters.AP3GMW.value, m3227GP3GMW = document.parameters.m3227GP3GMW.value, GP3AMW = document.parameters.GP3AMW.value, m7GP3AMW = document.parameters.m7GP3AMW.value, m7GP3m2OAMW = document.parameters.m7GP3m2OAMW.value, m3227GP3AMW = document.parameters.m3227GP3AMW.value, ARCAanalogMW = document.parameters.ARCAanalogMW.value;
 	var totalMW, mMolarExtCoeff
-	
 	if (seqLowerCase.length == 0) { // allows entering number of nucleotides instead of sequence
 		var numAs = parseInt(document.WebTool.numAs.value, 10)
 		var numCs = parseInt(document.WebTool.numCs.value, 10)
@@ -153,8 +171,9 @@ function plotRegressionChart(x_values, y_values, y_hat, r2){
 		var numm1Ws = parseInt(document.WebTool.numm1Ws.value, 10)
 		var numWs = parseInt(document.WebTool.numWs.value, 10)
 		var numUs = parseInt(document.WebTool.numUs.value, 10)
-		}
-	else { // this method is applied when the numbers of nucleotides are not provided
+		var numMs = parseInt(document.WebTool.numMs.value, 10)
+	}
+	else { // this method is applied when the RNA sequence is provided
 		for (i = 0; i < seqLowerCase.length; i++){
 			if (seqLowerCase.charAt(i) == "a")
 				numAs++
@@ -170,11 +189,68 @@ function plotRegressionChart(x_values, y_values, y_hat, r2){
 				numm1Ws++
 			if (seqLowerCase.charAt(i) == "w")
 				numWs++
-			}
+			if (seqLowerCase.charAt(i) == "m")
+				numMs++
 		}
-	totalMW = (numAs*aMW) + (numCs*cMW) + (numGs*gMW) + (numUs*uMW) + (numm1Ws*m1wMW) + (numWs*wMW)
-	mMolarExtCoeff = (numAs*aExtCoeff) + (numCs*cExtCoeff) + (numGs*gExtCoeff) + (numUs*uExtCoeff) + (numm1Ws*m1wExtCoeff) + (numWs*wExtCoeff)
-	numNts = numAs + numCs + numGs + numUs + numWs + numm1Ws
+	}
+// selecting parameters for mRNA cap
+	if ( document.getElementById('NMP').checked == true ) {
+	mRNAcap_MW = 0, mRNAcap_Epsilon260 = 0;
+	}
+	else if ( document.getElementById('NTP').checked == true ) {
+	mRNAcap_MW = 159.959804, mRNAcap_Epsilon260 = 0;
+	}
+	else if ( document.getElementById('numGP3Gs').checked == true ) {
+	mRNAcap_MW = GP3GMW - gMW, mRNAcap_Epsilon260= GP3GExtCoeff - 12.08;
+	}
+	else if ( document.getElementById('numm7GP3Gs').checked == true ) {
+	mRNAcap_MW = m7GP3GMW - gMW, mRNAcap_Epsilon260 = m7GP3GExtCoeff - 12.08;
+	}
+	else if ( document.getElementById('numARCAs').checked == true ) {
+	mRNAcap_MW = ARCAMW - gMW, mRNAcap_Epsilon260 = ARCAExtCoeff - 12.08;
+	}
+	else if ( document.getElementById('numm3227GP3Gs').checked == true ) {
+	mRNAcap_MW = m3227GP3GMW - gMW, mRNAcap_Epsilon260 = m3227GP3GExtCoeff - 12.08;
+	}
+	else if ( document.getElementById('numAP3Gs').checked == true ) {
+	mRNAcap_MW = AP3GMW - gMW, mRNAcap_Epsilon260 = AP3GExtCoeff - 12.08;
+	}
+	else if ( document.getElementById('numGP3As').checked == true ) {
+	mRNAcap_MW = GP3AMW - aMW, mRNAcap_Epsilon260 = AP3GExtCoeff - 15.02;
+	}
+	else if ( document.getElementById('numm7GP3As').checked == true ) {
+	mRNAcap_MW = m7GP3AMW - aMW, mRNAcap_Epsilon260 = m7GP3AExtCoeff - 15.02;
+	}
+	else if ( document.getElementById('numm7GP3m2OAs').checked == true ) {
+	mRNAcap_MW = m7GP3m2OAMW - aMW, mRNAcap_Epsilon260 = m7GP3m2OAExtCoeff - 15.02;
+	}
+	else if ( document.getElementById('numm3227GP3As').checked == true ) {
+	mRNAcap_MW = m3227GP3AMW - aMW, mRNAcap_Epsilon260 = m3227GP3AExtCoeff - 15.02;
+	}
+	else {
+	mRNAcap_MW = ARCAanalogMW - aMW, mRNAcap_Epsilon260 = ARCAanalogExtCoeff - 15.02;
+	}
+	// selecting parameters for modified Cytidine nucleosides
+	if ( document.getElementById('CTP').checked == true ) {
+	numMs = 0;
+	}
+	else if ( document.getElementById('m5CTP').checked == true ) {
+	cMW = mMW, cExtCoeff = mExtCoeff, numMs = numCs, numCs = 0 ;
+	}
+	// selecting parameters for modified Uridine nucleosides
+	if ( document.getElementById('UTP').checked == true ) {
+	numWs = numWs, numm1Ws = numm1Ws;
+	}
+	else if ( document.getElementById('PsiTP').checked == true ) {
+	uMW = wMW, uExtCoeff = wExtCoeff, numWs = numUs, numUs = 0, numm1Ws = 0 ;
+	}
+	else if ( document.getElementById('m1PsiTP').checked == true ) {
+	uMW = m1wMW, uExtCoeff = m1wExtCoeff, numm1Ws = numUs, numUs = 0, numWs = 0 ;
+	}
+//Calculating RNA MW and RNA length, cap and the hidrogen of the 3'OH end are included
+	totalMW = (numAs*aMW) + (numCs*cMW) + (numGs*gMW) + (numUs*uMW) + (numm1Ws*m1wMW) + (numWs*wMW) + (numMs*mMW) + 18.01528 + mRNAcap_MW;
+	mMolarExtCoeff = (numAs*aExtCoeff) + (numCs*cExtCoeff) + (numGs*gExtCoeff) + (numUs*uExtCoeff) + (numm1Ws*m1wExtCoeff) + (numWs*wExtCoeff) + mRNAcap_Epsilon260;
+	numNts = numAs + numCs + numGs + numUs + numWs + numMs + numm1Ws
 // rounding up numbers
 	mMolarExtCoeffRounded = Math.round(mMolarExtCoeff * 100) / 100
 	stockConc = 1000000 * absorbance / mMolarExtCoeff / pathlength
@@ -193,14 +269,72 @@ function plotRegressionChart(x_values, y_values, y_hat, r2){
 	document.WebTool.numUs.value = numUs
 	document.WebTool.numm1Ws.value = numm1Ws
 	document.WebTool.numWs.value = numWs
+	document.WebTool.numMs.value = numMs
 	document.WebTool.numNts.value = numNts
 	document.WebTool.totalMW.value = totalMWRounded
 	document.WebTool.mMolarExtCoeff.value = mMolarExtCoeffRounded
+//notifying lack of information
+	if (absorbance == 0) { 
+	document.WebTool.stockConc.value = "A260 input required";
+	document.WebTool.stockConcugul.value = "A260 input required";
+	}
+	else {
 	document.WebTool.stockConc.value = stockConcRounded
-	document.WebTool.totalmicromols.value = totalmicromolsRounded
-	document.WebTool.totalMass.value = totalMassRounded
 	document.WebTool.stockConcugul.value = stockConcugulRounded
+	}
+	if (totalStockVol == 0) { 
+	document.WebTool.totalMass.value = "Stock volume input required"
+	document.WebTool.totalmicromols.value = "Stock volume input required"
+	}
+	else {
+    document.WebTool.totalMass.value = totalMassRounded
+	document.WebTool.totalmicromols.value = totalmicromolsRounded
+	}
+//showing results
+	toggle2('results')
 }
+</script>
+<script language="JavaScript">function LoadExample() { 
+
+	let VaccineSeq = "AGAAUAAACUAGUAUUCUUCUGGUCCCCACAGACUCAGAGAGAACCCGCCACCAUGUUCGUGUUCCUGGUGCUGCUGCCUCUGGUGUCCAGCCAGUGUGUGAACCUGACCACCAGAACACAGCUGCCUCCAGCCUACACCAACAGCUUUACCAGAGGCGUGUACUACCCCGACAAGGUGUUCAGAUCCAGCGUGCUGCACUCUACCCAGGACCUGUUCCUGCCUUUCUUCAGCAACGUGACCUGGUUCCACGCCAUCCACGUGUCCGGCACCAAUGGCACCAAGAGAUUCGACAACCCCGUGCUGCCCUUCAACGACGGGGUGUACUUUGCCAGCACCGAGAAGUCCAACAUCAUCAGAGGCUGGAUCUUCGGCACCACACUGGACAGCAAGACCCAGAGCCUGCUGAUCGUGAACAACGCCACCAACGUGGUCAUCAAAGUGUGCGAGUUCCAGUUCUGCAACGACCCCUUCCUGGGCGUCUACUACCACAAGAACAACAAGAGCUGGAUGGAAAGCGAGUUCCGGGUGUACAGCAGCGCCAACAACUGCACCUUCGAGUACGUGUCCCAGCCUUUCCUGAUGGACCUGGAAGGCAAGCAGGGCAACUUCAAGAACCUGCGCGAGUUCGUGUUUAAGAACAUCGACGGCUACUUCAAGAUCUACAGCAAGCACACCCCUAUCAACCUCGUGCGGGAUCUGCCUCAGGGCUUCUCUGCUCUGGAACCCCUGGUGGAUCUGCCCAUCGGCAUCAACAUCACCCGGUUUCAGACACUGCUGGCCCUGCACAGAAGCUACCUGACACCUGGCGAUAGCAGCAGCGGAUGGACAGCUGGUGCCGCCGCUUACUAUGUGGGCUACCUGCAGCCUAGAACCUUCCUGCUGAAGUACAACGAGAACGGCACCAUCACCGACGCCGUGGAUUGUGCUCUGGAUCCUCUGAGCGAGACAAAGUGCACCCUGAAGUCCUUCACCGUGGAAAAGGGCAUCUACCAGACCAGCAACUUCCGGGUGCAGCCCACCGAAUCCAUCGUGCGGUUCCCCAAUAUCACCAAUCUGUGCCCCUUCGGCGAGGUGUUCAAUGCCACCAGAUUCGCCUCUGUGUACGCCUGGAACCGGAAGCGGAUCAGCAAUUGCGUGGCCGACUACUCCGUGCUGUACAACUCCGCCAGCUUCAGCACCUUCAAGUGCUACGGCGUGUCCCCUACCAAGCUGAACGACCUGUGCUUCACAAACGUGUACGCCGACAGCUUCGUGAUCCGGGGAGAUGAAGUGCGGCAGAUUGCCCCUGGACAGACAGGCAAGAUCGCCGACUACAACUACAAGCUGCCCGACGACUUCACCGGCUGUGUGAUUGCCUGGAACAGCAACAACCUGGACUCCAAAGUCGGCGGCAACUACAAUUACCUGUACCGGCUGUUCCGGAAGUCCAAUCUGAAGCCCUUCGAGCGGGACAUCUCCACCGAGAUCUAUCAGGCCGGCAGCACCCCUUGUAACGGCGUGGAAGGCUUCAACUGCUACUUCCCACUGCAGUCCUACGGCUUUCAGCCCACAAAUGGCGUGGGCUAUCAGCCCUACAGAGUGGUGGUGCUGAGCUUCGAACUGCUGCAUGCCCCUGCCACAGUGUGCGGCCCUAAGAAAAGCACCAAUCUCGUGAAGAACAAAUGCGUGAACUUCAACUUCAACGGCCUGACCGGCACCGGCGUGCUGACAGAGAGCAACAAGAAGUUCCUGCCAUUCCAGCAGUUUGGCCGGGAUAUCGCCGAUACCACAGACGCCGUUAGAGAUCCCCAGACACUGGAAAUCCUGGACAUCACCCCUUGCAGCUUCGGCGGAGUGUCUGUGAUCACCCCUGGCACCAACACCAGCAAUCAGGUGGCAGUGCUGUACCAGGACGUGAACUGUACCGAAGUGCCCGUGGCCAUUCACGCCGAUCAGCUGACACCUACAUGGCGGGUGUACUCCACCGGCAGCAAUGUGUUUCAGACCAGAGCCGGCUGUCUGAUCGGAGCCGAGCACGUGAACAAUAGCUACGAGUGCGACAUCCCCAUCGGCGCUGGAAUCUGCGCCAGCUACCAGACACAGACAAACAGCCCUCGGAGAGCCAGAAGCGUGGCCAGCCAGAGCAUCAUUGCCUACACAAUGUCUCUGGGCGCCGAGAACAGCGUGGCCUACUCCAACAACUCUAUCGCUAUCCCCACCAACUUCACCAUCAGCGUGACCACAGAGAUCCUGCCUGUGUCCAUGACCAAGACCAGCGUGGACUGCACCAUGUACAUCUGCGGCGAUUCCACCGAGUGCUCCAACCUGCUGCUGCAGUACGGCAGCUUCUGCACCCAGCUGAAUAGAGCCCUGACAGGGAUCGCCGUGGAACAGGACAAGAACACCCAAGAGGUGUUCGCCCAAGUGAAGCAGAUCUACAAGACCCCUCCUAUCAAGGACUUCGGCGGCUUCAAUUUCAGCCAGAUUCUGCCCGAUCCUAGCAAGCCCAGCAAGCGGAGCUUCAUCGAGGACCUGCUGUUCAACAAAGUGACACUGGCCGACGCCGGCUUCAUCAAGCAGUAUGGCGAUUGUCUGGGCGACAUUGCCGCCAGGGAUCUGAUUUGCGCCCAGAAGUUUAACGGACUGACAGUGCUGCCUCCUCUGCUGACCGAUGAGAUGAUCGCCCAGUACACAUCUGCCCUGCUGGCCGGCACAAUCACAAGCGGCUGGACAUUUGGAGCAGGCGCCGCUCUGCAGAUCCCCUUUGCUAUGCAGAUGGCCUACCGGUUCAACGGCAUCGGAGUGACCCAGAAUGUGCUGUACGAGAACCAGAAGCUGAUCGCCAACCAGUUCAACAGCGCCAUCGGCAAGAUCCAGGACAGCCUGAGCAGCACAGCAAGCGCCCUGGGAAAGCUGCAGGACGUGGUCAACCAGAAUGCCCAGGCACUGAACACCCUGGUCAAGCAGCUGUCCUCCAACUUCGGCGCCAUCAGCUCUGUGCUGAACGAUAUCCUGAGCAGACUGGACCCUCCUGAGGCCGAGGUGCAGAUCGACAGACUGAUCACAGGCAGACUGCAGAGCCUCCAGACAUACGUGACCCAGCAGCUGAUCAGAGCCGCCGAGAUUAGAGCCUCUGCCAAUCUGGCCGCCACCAAGAUGUCUGAGUGUGUGCUGGGCCAGAGCAAGAGAGUGGACUUUUGCGGCAAGGGCUACCACCUGAUGAGCUUCCCUCAGUCUGCCCCUCACGGCGUGGUGUUUCUGCACGUGACAUAUGUGCCCGCUCAAGAGAAGAAUUUCACCACCGCUCCAGCCAUCUGCCACGACGGCAAAGCCCACUUUCCUAGAGAAGGCGUGUUCGUGUCCAACGGCACCCAUUGGUUCGUGACACAGCGGAACUUCUACGAGCCCCAGAUCAUCACCACCGACAACACCUUCGUGUCUGGCAACUGCGACGUCGUGAUCGGCAUUGUGAACAAUACCGUGUACGACCCUCUGCAGCCCGAGCUGGACAGCUUCAAAGAGGAACUGGACAAGUACUUUAAGAACCACACAAGCCCCGACGUGGACCUGGGCGAUAUCAGCGGAAUCAAUGCCAGCGUCGUGAACAUCCAGAAAGAGAUCGACCGGCUGAACGAGGUGGCCAAGAAUCUGAACGAGAGCCUGAUCGACCUGCAAGAACUGGGGAAGUACGAGCAGUACAUCAAGUGGCCCUGGUACAUCUGGCUGGGCUUUAUCGCCGGACUGAUUGCCAUCGUGAUGGUCACAAUCAUGCUGUGUUGCAUGACCAGCUGCUGUAGCUGCCUGAAGGGCUGUUGUAGCUGUGGCAGCUGCUGCAAGUUCGACGAGGACGAUUCUGAGCCCGUGCUGAAGGGCGUGAAACUGCACUACACAUGAUGACUCGAGCUGGUACUGCAUGCACGCAAUGCUAGCUGCCCCUUUCCCGUCCUGGGUACCCCGAGUCUCCCCCGACCUCGGGUCCCAGGUAUGCUCCCACCUCCACCUGCCCCACUCACCACCUCUGCUAGUUCCAGACACCUCCCAAGCACGCAGCAAUGCAGCUCAAAACGCUUAGCCUAGCCACACCCCCACGGGAAACAGCAGUGAUUAACCUUUAGCAAUAAACGAAAGUUUAACUAAGCUAUACUAACCCCAGGGUUGGUCAAUUUCGUGCCAGCCACACCCUGGAGCUAGCAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAGCAUAUGACUAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+	VaccineName = "BNT162b2_mRNA_Vaccine_WHO-provided_sequence_doc_11889_Sep_2020: These A260 and Stock volume values are fictitious",
+	StockVol = 100, A260 = 20;
+var elements = document.getElementsByName('mRNAcap');
+for (i=0;i<elements.length;i++) {
+  if(elements[i].id == "numARCAanalogs") {
+    elements[i].checked = true;
+  }
+}
+var element = document.getElementsByName('Umod');
+for (i=0;i<element.length;i++) {
+  if(element[i].id == "m1PsiTP") {
+    element[i].checked = true;
+  }
+}
+	document.WebTool.seq.value = VaccineSeq
+	document.WebTool.SeqName.value = VaccineName
+	document.WebTool.totalStockVol.value = StockVol
+	document.WebTool.absorbance.value = A260
+}
+function LoadLinRegExample() { 
+
+	let DilExample = "0.04\n0.04\n0.04\n0.02\n0.02\n0.02\n0.01\n0.01\n0.01\n0.005\n0.005\n0.005",
+	A260Example    = "0.81\n0.80\n0.79\n0.39\n0.41\n0.40\n0.21\n0.19\n0.20\n0.11\n0.10\n0.09";
+	
+	document.getElementById('x_values').value = DilExample
+	document.getElementById('y_values').value = A260Example
+
+}
+</script>
+<script language="JavaScript">function resetMeanCal() { 
+
+	let A260values = "", A260 = "", a260mean ="", Corrected = "";
+	
+	document.aver.mesuredA260mean.value = a260mean
+	document.aver.correctedA260.value = Corrected
+	document.getElementById('Abs260values').value = A260values
+	document.WebTool.absorbance.value = A260
+ }
 </script>
 <script language="JavaScript">function toggle(elementId) { 
 	var element = document.getElementById(elementId);
@@ -210,14 +344,22 @@ function plotRegressionChart(x_values, y_values, y_hat, r2){
 	element.style.display = "block";
 	}
 }
+function toggle2(elementId) { 
+	var element = document.getElementById(elementId);
+	if (element.style.display === "block") {
+		element.style.display = "block";
+	} else {
+	element.style.display = "block";
+	}
+}
 </script>
   <!-- Bootstrap CSS  -->
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-eOJMYsd53ii+scO/bJGFsiCZc+5NDVN2yr8+0RDqr0Ql0h+rP48ckxlpbzKgwra6" crossorigin="anonymous">
   <!-- Bootstrap JavaScript Bundle -->
-  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta3/dist/js/bootstrap.bundle.min.js" integrity="sha384-JEW9xMcG8R+pH31jmWH6WWP0WintQrMb4s7ZOdauHnUtxwoG2vI5DkLtS3qm9Ekf" crossorigin="anonymous"></script>
+<script async src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta3/dist/js/bootstrap.bundle.min.js" integrity="sha384-JEW9xMcG8R+pH31jmWH6WWP0WintQrMb4s7ZOdauHnUtxwoG2vI5DkLtS3qm9Ekf" crossorigin="anonymous"></script>
 
   <!-- Chart.js for plotting -->
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script async src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   
 </head>
 	<body>
@@ -229,60 +371,135 @@ function plotRegressionChart(x_values, y_values, y_hat, r2){
 	
 	<br><h1>mRNA extinction coefficient and concentration calculator</h1>
 	
-	<h3><br>This webserver provides a tool for calculating the extinction coefficient (&epsilon;<sub><font size="2">260</font></sub>) for RNA molecules with standard nucleobases (A, G, C and U),
-	pseudouridine (&Psi;), and N<sup><font size="3">1</font></sup>-methylpseudoUridine (m<sup><font size="3">1</font></sup>&Psi;).<br>
+	<h3><br>This web server provides a tool for calculating the extinction coefficient (&epsilon;<sub><font size="2">260</font></sub>) for RNA molecules with standard nucleobases (A,G,C and U),
+	pseudouridine (&Psi;), N1-methylpseudouridine (m<sup><font size="3">1</font></sup>&Psi;) and 5-methylcytidine (m<sup><font size="3">5</font></sup>C).<br>
 	The parameters for calculating the &epsilon;<sub><font size="2">260</font></sub> and molecular weight of an RNA can be found at the bottom of this webserver.<br>
 	An experimental protocol is provided, along with the required calculating tools, for measuring the 260 nm absorbance of mRNAs and calculating mRNA concentrations.<br>
-	This protocol for photometric measurement of RNA concentrations is based on the intrinsic absorptivity properties of single monophosphate nucleotides.
-	<br><br>If you use this protocol and webserver, please cite: <a href="/link/to/article/inNAR.htm">NAR link</a>
+	The calculations in this web server and the photometric measurement of RNA concentrations are based on the intrinsic UV absorptivity properties of single monophosphate nucleotides.
+	<br><br><b>This website is free and open to all users and there is no login requirement.</b>
+	<br><br>If you use this protocol and webserver, please cite: <a href="/link/to/article/inJournal.htm">Journal link will be here</a>
 	
 	<br></h3>
  <hr>
-		<h2><button id="show_protocol" onclick="toggle('protocol')">Protocol for measuring mRNA concentration</button></h2>
- 		<div id="protocol" style="text-align:left" class="wrapper">
-		
+		<h2><button id="show_protocol" onclick="toggle('protocols')">Protocols for measuring mRNA concentration</button></h2>
+		 <div id="protocols" style="text-align:left" class="wrapper">
+		 RNA hydrolysis is preformed to break down the RNA molecules into single  monophosphate nucleotides.<br>
+		 It can be acchieved by alkaline and/or thermal hydrolysis.<br>
+		 Their combination can increase the rate of cytosine deamination to uridine and alters the UV absorptivity of the single monophosphate nucleotide pool.<br>
+		 Therefore, methods have been developed to partially combine them and minimize the cytosine deamination.<br>
+		 Herein, we provide two of those protocols. <br>
+		 <br>
+<button id="show_protocol1" onclick="toggle('protocol1')">ALKALINE HYDROLYSIS</button>
+<div id="protocol1" style="text-align:left" class="wrapper">
+ PROTOCOL FOR ALKALINE HYDROLYSIS OF RNA
+ <br>
 		<b>Materials:</b>
 		<br>
-		- 2 µl of RNA stock solution.<br>
-		- 2 µl of buffer solution.<br>
-		- 1 ml of 1 M NaOH.<br>
-		- 1 ml of 1 M HCl.<br>
-		- 1 ml of nuclease-free water.<br>
+		- 1 part (e.g. 2 &#956;l) of RNA stock solution.<br>
+		- 1 part (2 &#956;l) of same buffer as RNA stock solution.<br>
+		- 10 parts (20 &#956;l) of 1 M NaOH.<br>
+		- 10 parts (20 &#956;l) of 1 M HCl.<br>
+		- 50 parts (100 &#956;L) of nuclease-free water.<br>
 		<br>
 		<b>Procedure: </b><br>
-		1) add 2 µl of your stock RNA into a pcr tube (#1),<br>
-		2) add 8 µl of 1 M NaOH and incubate at 37°C for 1 hour ( It will hydrolyze the RNA to NMPs).<br>
-		3) add 8 µl of 1 M HCl to neutralize the solution,<br>
-		4) add 32 µl of nuclease-free water and mix to reach a 1/25 dilution of the stock RNA solution.<br>
-		5) Prepare a black solution, by adding into a pcr tube (#0):<br>
-		&nbsp;&nbsp;&nbsp;-  2 µl of buffer solution,<br> 
-		&nbsp;&nbsp;&nbsp;-  8 µl of 1 M NaOH,<br> 
-		&nbsp;&nbsp;&nbsp;-  8 µl of 1 M HCl,<br>
-		&nbsp;&nbsp;&nbsp;- 32 µl of nuclease-free water.<br>
-		6) Measure the 260 nm UV absorbance in the spectrophotometer,<br>
+		1) add 1 part (2 &#956;l) of your stock RNA into a tube (#1),<br>
+		2) add 4 parts (8 &#956;l) of 1 M NaOH and incubate at <b> 37°C for 1 hour </b> or <b> 20°C for 12 to 16 hours (overnight incubation) </b>.<br>
+		3) add 4 parts (8 &#956;l) of 1 M HCl to neutralize the solution,<br>
+		4) add 16 parts (32 &#956;l) of nuclease-free water and mix to reach a 1/25 dilution of the stock RNA solution.<br>
+		5) Prepare a black solution, by adding into a tube (#0):<br>
+		&nbsp;&nbsp;&nbsp;-  1 part (2 &#956;l) of buffer solution,<br> 
+		&nbsp;&nbsp;&nbsp;-  4 parts (8 &#956;l) of 1 M NaOH,<br> 
+		&nbsp;&nbsp;&nbsp;-  4 parts (8 &#956;l) of 1 M HCl,<br>
+		&nbsp;&nbsp;&nbsp;- 16 parts (32 &#956;l) of nuclease-free water.<br>
+		6) Blank the UV spectrophotometer and measure the 260 nm UV absorbance,<br>
 			perform 3 to 5 measurements, calculate the dilution corrected A260 mean value, using the <b>A260 mean calculator</b>.<br>
 		7) Enter the RNA sequence.<br>
 		<br>
 		8) Click on "Calculate". <br><br>
 		
 		<b>Note:</b>
-		<br>It is well-known that spectrophotometers are more accurate when the measurements are around 1 (0.8-1.2).
+		<br>Spectrophotometers are more accurate when the measurements are around 1 (0.8-1.2).
 		<br>A serial dilution will assure that at least one of the measurements is within or close to this range.
 		<br>Multiple measurements also help to reduce the impact of pipetting error on the mRNA concentration calculation.
 		<br>An <b>advanced protocol</b> is here provided.<br>
-		Perform steps 1 to 4 in four different tubes (#1-4). 
+		<b>Materials:</b>
+		<br>
+		- 4 part (e.g. 8 &#956;l) of RNA stock solution.<br>
+		- 15 part (30 &#956;l) of same buffer as RNA stock solution.<br>
+		- 100 parts (200 &#956;l) of 1 M NaOH.<br>
+		- 100 parts (200 &#956;l) of 1 M HCl.<br>
+		- 250 parts (500 &#956;L) of nuclease-free water.<br>
+		<br>
+		<b>Procedure: </b><br>
+		Perform steps 1 to 4 four times, i.e. in four different tubes (#1 to #4). 
 		<br>After step 4, prepare a diluting solution:<br>
-		&nbsp;&nbsp;&nbsp;-  22 µl of buffer solution,<br> 
-		&nbsp;&nbsp;&nbsp;-  88 µl of 1 M NaOH,<br> 
-		&nbsp;&nbsp;&nbsp;-  88 µl of 1 M HCl,<br>
-		&nbsp;&nbsp;&nbsp;- 352 µl of nuclease-free water.
-		<br>Dilute tube #2 to 4, by adding 50, 150 and 350 µl of diluting solution to reach 1/50, 1/100 and 1/200 dilution factors respectively.
+		&nbsp;&nbsp;&nbsp;- 11 parts (22 &#956;l) of buffer solution,<br> 
+		&nbsp;&nbsp;&nbsp;- 44 parts (88 &#956;l) of 1 M NaOH,<br> 
+		&nbsp;&nbsp;&nbsp;- 44 parts (88 &#956;l) of 1 M HCl,<br>
+		&nbsp;&nbsp;&nbsp;- 176 parts (352 &#956;l) of nuclease-free water.
+		<br>Dilute tube #2 to 4, by adding 25, 75 or 175 parts (50, 150 and 350 &#956;l) of diluting solution to reach 1/50, 1/100 and 1/200 dilution factors respectively.
 		<br>Perform step 6 using tube #1-4.
 		<br>These measurements allow the determination of the corrected A260 mean value using a Linear Regression model.
 		<br>A <b>Linear regression calculator </b> is here provided.
 <br><br>
-		Note on pathlength:<br>*Most comercially available microvolume spectrophotometers (a.k.a nanodrop) are calibrated for and use 1 cm as default pathlength.
+<b>Important notes:</b><br>
+- on tube selection:<br> PCR tubes or cap-locked tubes are recommended.<br>
+- on the 37°C incubation: <br> It can be performed on a thermocycler with cap-heating (105°C) capability or on dry heat block.<br> The reaction tubes should be cool-downed and centrifuged after this step to reduce evaporation. <br>
+- on the pathlength:<br>*Most comercially available microvolume spectrophotometers (a.k.a nanodrop) are calibrated for and use 1 cm as default pathlength.
+</div><br><br>
+<button id="show_protocol2" onclick="toggle('protocol2')">THERMAL HYDROLYSIS</button>
+<div id="protocol2" style="text-align:left" class="wrapper">
+ PROTOCOL FOR THERMAL HYDROLYSIS OF RNA AT NEUTRAL PH
+ <br>
+		<b>Materials:</b>
+		<br>
+		- 1 part (2 &#956;l) of RNA stock solution.<br>
+		- 1 part (2 &#956;l) of same buffer as RNA stock solution.<br>
+		- 1 part (2 &#956;l) of 10X hydrolysis buffer (0.6 M Na<sub>2</sub>CO<sub>3</sub>, 100 mM EDTA pH 8).<br>
+		- 1 ml of nuclease-free water.<br>
+		<br>
+		<b>Procedure: </b><br>
+		1) add 1 part (2 &#956;l) of your stock RNA into a tube (#1),<br>
+		2) add 1 parts (2 &#956;l) of 10X hydrolysis buffer.<br>
+		3) add 8 parts  (16 &#956;l) of nuclease-free water and and incubate at <b> 95°C for 2 hours</b>.<br>
+		4) Prepare a black solution, by adding into a tube (#0):<br>
+		&nbsp;&nbsp;&nbsp;- 1 part (2 &#956;l) of buffer solution,<br> 
+		&nbsp;&nbsp;&nbsp;- 1 part (2 &#956;l) of 10X hydrolysis buffer,<br> 
+		&nbsp;&nbsp;&nbsp;- 8 parts (16 &#956;l) of nuclease-free water.<br>
+		5) add 15 parts (30 &#956;l) of nuclease-free water to reach a 1/25 dilution of the stock RNA solution.<br>
+		6) Blank the UV spectrophotometer and measure the 260 nm UV absorbance,<br>
+			perform 3 to 5 measurements, calculate the dilution corrected A260 mean value, using the <b>A260 mean calculator</b>.<br>
+		7) Enter the RNA sequence.<br>
+		<br>
+		8) Click on "Calculate". <br><br>
 		
+		<b>Note:</b>
+		<br>Spectrophotometers are more accurate when the measurements are around 1 (0.8-1.2).
+		<br>A serial dilution will assure that at least one of the measurements is within or close to this range.
+		<br>Multiple measurements also help to reduce the impact of pipetting error on the mRNA concentration calculation.
+		<br>An <b>advanced protocol</b> is here provided.<br>
+		<b>Materials:</b><br>
+		- 4 part (e.g. 8 &#956;l) of RNA stock solution.<br>
+		- 15 part (30 &#956;l) of same buffer as RNA stock solution.<br>
+		- 20 parts (40 &#956;l) of 10X hydrolysis buffer,<br>
+		- 400 parts (800 &#956;L) of nuclease-free water.<br>
+				<br>
+		<b>Procedure: </b><br>
+		Perform steps 1 to 5 four times, i.e. in four different tubes (#1-4). 
+		<br>After step 5, prepare a diluting solution:<br>
+		&nbsp;&nbsp;&nbsp;-  11 parts (22 &#956;l) of buffer solution,<br> 
+		&nbsp;&nbsp;&nbsp;-  11 parts (22 &#956;l) of 10X hydrolysis buffer,<br> 
+		&nbsp;&nbsp;&nbsp;- 253 parts (506 &#956;l) of nuclease-free water.<br>
+		<br>Dilute tube #2 to 4, by adding 25, 75 or 175 parts (50, 150 and 350 &#956;l) of diluting solution to reach 1/50, 1/100 and 1/200 dilution factors respectively.
+		<br>Perform step 6 to 8 using tube #1-4.
+		<br>These measurements allow the determination of the corrected A260 mean value using a Linear Regression model.
+		<br>A <b>Linear regression calculator </b> is here provided.
+<br><br>
+<b>Important notes:</b><br>
+- on tube selection:<br> PCR tubes are recommended.<br>
+- on the 95°C incubation: <br> it should be performed on a thermocycler with cap-heating (105°C) capability and reaction tubes should be centrifuged and cool-downed after this step to reduce evaporation.<br>
+- on the pathlength:<br>*Most comercially available microvolume spectrophotometers (a.k.a nanodrop) are calibrated for and use 1 cm as default pathlength.
+		</div>
 <hr>
 <button id="show_A260average" onClick="toggle('A260average')">A260 mean calculator</button>
 
@@ -293,7 +510,8 @@ function plotRegressionChart(x_values, y_values, y_hat, r2){
 		<span class="input-group-text" style=" text-align: left; font-family: 'D-DIN', sans-serif; font-size: 1.1em;">A260 values:</span>
 		<textarea name="Abs260values" id="Abs260values" rows="5" cols="50" class="form-control" placeholder="one A260 value per line" style=" text-align: left; font-family: 'D-DIN', sans-serif; font-size: 1em;"></textarea>
 		<button id="calculate_average" class="btn btn-outline-success" onClick="average()" style=" font-family: 'D-DIN', sans-serif; font-size: 1.3em;color: teal;">Calculate</button>
-	</div>
+		<button id="clear_mean" class="btn btn-outline-success" onClick="resetMeanCal()" style=" font-family: 'D-DIN', sans-serif; font-size: 1.3em;color: red;">Clear</button>
+		</div>
 <form name="aver">
 	<div class="input-group mb-3">
 		<span class="input-group-text" style=" text-align: left; font-family: 'D-DIN', sans-serif; font-size: 1.1em;">A260 mean:</span>
@@ -314,20 +532,20 @@ function plotRegressionChart(x_values, y_values, y_hat, r2){
 			<span class="input-group-text" style=" text-align: left; font-family: 'D-DIN', sans-serif; font-size: 1.1em;">A260 values (y):</span>
 			<textarea id="y_values" rows="20" cols="20" class="form-control" placeholder="one A260 value per line.&#10;&#10;&#10;&#10;&#10;&#10;&#10;&#10;&#10;An equal number of values in the two columns is required.&#10;Inputs will be automatically paired.&#10;And a linear regression model will be built." style=" text-align: left; font-family: 'D-DIN', sans-serif; font-size: 1.1em;"></textarea><td>
 		</div>
-			<td></td><td></td><td></td><td><button id="calculate_Regmodel" class="btn btn-outline-success" onClick="developModel()" style=" font-family: 'D-DIN', sans-serif; font-size: 1.3em;color: teal;">Calculate</button></td>
+			<td></td><td></td><td></td><td><input type=Button class="btn btn-outline-success" value="Load example" onClick="LoadLinRegExample()" style=" font-size: 1.3em; color: black;" ><td><td><button id="calculate_Regmodel" class="btn btn-outline-success" onClick="developModel()" style=" font-family: 'D-DIN', sans-serif; font-size: 1.3em;color: teal;">Calculate</button></td>
 			<td><input name="reset" type=Reset class="btn btn-outline-success" value="Reset" onClick="window.location.reload()" style=" font-size: 1.3em; color: red;"></td>
 
 		    <td><br>The model is used to caculate the A260 value for your RNA stock solution.<br> 
-			The result will be written in the "260 nm Absorbance (A260)" box.</td>
+			The model-derived A260 mean value will be rounded at three decimal places and written in the "260 nm Absorbance (A260)" box.</td>
 	
 
-  <div class="container-fluid">
+  <div class="container-fluid" id="plotContainer">
     
     <h3 style="margin-top: 30px;"> Linear Regression </h3>
 
-    <h6 id="regressionEquation" style="margin-top: 20px; margin-bottom: 8px;"> </h6>
+    <h6 id="regressionEquation" name="regressionEquation" style="margin-top: 20px; margin-bottom: 8px;"> </h6>
 
-    <canvas id="regressionChart"></canvas>
+    <canvas id="regressionChart" name="regressionChart" ></canvas>
 
   </div>
   	      <br /><br />
@@ -359,23 +577,40 @@ function plotRegressionChart(x_values, y_values, y_hat, r2){
 <form name="WebTool">
 <table border=0>
     <div class="input-group mb-3">
-      <span class="input-group-text" style=" text-align: left; font-family: 'D-DIN', sans-serif; font-size: 1.1em;">Name</span>
+      <span class="input-group-text" style=" text-align: left; font-family: 'D-DIN', sans-serif; font-size: 1.5em;">Name</span>
       <input type="text" class="form-control" placeholder="Give your RNA a nice name" id="SeqName" size=93,1 style=" text-align: left; font-family: 'D-DIN', sans-serif; font-size: 1.1em;">
 </div> 
 <tr>
  <div class="input-group mb-3">
-      <span class="input-group-text" style=" text-align: left; font-family: 'D-DIN', sans-serif; font-size: 1.1em;">RNA Sequence:</span>
-      <textarea name="seq" cols="100" rows="15" class="form-control" placeholder="Input your RNA sequence here.&#10;&#10;&#10;Use the standard nomenclature for RNA: G, A, C and U.&#10;A DNA sequence can serve as input, T will be regarded as U.&#10;Upper and lowercase are accepted, spaces will be ignored.&#10;For modified nucleotides, use the following nomenclature:&#10;W = pseudoUridine (&Psi;)&#10;Y = N1-MethylpseudoUridine (m1Ψ)"></textarea>
+      <span class="input-group-text" style=" text-align: left; font-family: 'D-DIN', sans-serif; font-size: 1.5em;">RNA Sequence:</span>
+      <textarea name="seq" cols="100" rows="15" class="form-control" placeholder="Input your RNA sequence here.&#10;&#10;&#10;Use the standard nomenclature for RNA: G, A, C and U.&#10;A DNA sequence can serve as input, T will be regarded as U.&#10;Upper and lowercase are accepted, spaces will be ignored.&#10;For modified nucleosides, use the stadard nomemclature and select the correponding modifications in the section below &#10; &#10;&#10; If the mRNA is capped, do not include the capping nucleotide in the input sequence.&#10; Select the coresponding mRNA cap below and hit 'Calculate'"></textarea>
  </div>
 </table>
 <table border=0>
+<h3><b>mRNA modification:</b></h3>
+<div class="input-group mb-3">
+<span class="input-group-text" style=" text-align: left; font-family: 'D-DIN', sans-serif; font-size: 1.5em;">C modifications:</span>
+<span style=" text-align: left; font-family: 'D-DIN', sans-serif; font-size: 1.5em;">&nbsp;&nbsp;None:&nbsp;&nbsp;</span>
+<input name ="Cmod" id="CTP" type="radio" checked>
+<span style=" text-align: left; font-family: 'D-DIN', sans-serif; font-size: 1.5em;">&nbsp;&nbsp;m<sup><font size="-1">5</font></sup>C:&nbsp;&nbsp;</span>
+<input name = "Cmod" id="m5CTP" type="radio" > 
+</div>
+<div class="input-group mb-3">
+<span class="input-group-text" style=" text-align: left; font-family: 'D-DIN', sans-serif; font-size: 1.5em;">U modifications:</span>
+<span style=" text-align: left; font-family: 'D-DIN', sans-serif; font-size: 1.5em;">&nbsp;&nbsp;None:&nbsp;&nbsp;</span>
+<input name ="Umod" id="UTP" type="radio" checked>
+<span style=" text-align: left; font-family: 'D-DIN', sans-serif; font-size: 1.5em;">&nbsp;&nbsp;&Psi;:&nbsp;&nbsp;</span>
+<input name = "Umod" id="PsiTP" type="radio" > 
+<span style=" text-align: left; font-family: 'D-DIN', sans-serif; font-size: 1.5em;">&nbsp;&nbsp;m<sup><font size="-1">1</font></sup>&Psi;:&nbsp;&nbsp;</span>
+<input name = "Umod" id="m1PsiTP" type="radio" > 
+</div>
 <tr> 
  <div class="input-group mb-3">
-	<span class="input-group-text" style=" text-align: left; font-family: 'D-DIN', sans-serif; font-size: 1.1em;">260 nm Absorbance (A260):</span>
+	<span class="input-group-text" style=" text-align: left; font-family: 'D-DIN', sans-serif; font-size: 1.5em;">260 nm Absorbance (A260):</span>
 	<input type="text" name="absorbance" class="form-control" style=" text-align: center;" value="" size=6,1>
-	<span class="input-group-text" style=" text-align: left; font-family: 'D-DIN', sans-serif; font-size: 1.1em;">Stock volume (µl):</span>
+	<span class="input-group-text" style=" text-align: left; font-family: 'D-DIN', sans-serif; font-size: 1.5em;">Stock volume (&#956;l):</span>
 	<input name="totalStockVol" class="form-control" style=" text-align: center;" value="" size=6,1>
-	<span class="input-group-text" style=" text-align: left; font-family: 'D-DIN', sans-serif; font-size: 1.1em;">Pathlength* (cm):</span>
+	<span class="input-group-text" style=" text-align: left; font-family: 'D-DIN', sans-serif; font-size: 1.5em;">Pathlength* (cm):</span>
 	<input name="pathlength" class="form-control" style=" text-align: center;" value="1" size=5,1>
  </div>
 </table>
@@ -383,53 +618,92 @@ function plotRegressionChart(x_values, y_values, y_hat, r2){
 <tr>
 
 <div class="input-group mb-3">
-<span class="input-group-text" style=" text-align: left; font-family: 'D-DIN', sans-serif; font-size: 1.1em;">A<sub><font size="-2">&nbsp;total</font></sub>:</span>
+<span class="input-group-text" style=" text-align: left; font-family: 'D-DIN', sans-serif; font-size: 1.5em;">A<sub><font size="-1">&nbsp;total</font></sub>:</span>
 <input name="numAs" type=Text class="form-control" style=" text-align: center;" size=4,1>
-<span class="input-group-text" style=" text-align: left; font-family: 'D-DIN', sans-serif; font-size: 1.1em;">G<sub><font size="-2">&nbsp;total</font></sub>:</span>
+<span class="input-group-text" style=" text-align: left; font-family: 'D-DIN', sans-serif; font-size: 1.5em;">G<sub><font size="-1">&nbsp;total</font></sub>:</span>
 <input name="numGs" type=Text class="form-control" style=" text-align: center;" size=4,1>
-<span class="input-group-text" style=" text-align: left; font-family: 'D-DIN', sans-serif; font-size: 1.1em;">C<sub><font size="-2">&nbsp;total</font></sub>:</span>
+<span class="input-group-text" style=" text-align: left; font-family: 'D-DIN', sans-serif; font-size: 1.5em;">C<sub><font size="-1">&nbsp;total</font></sub>:</span>
 <input name="numCs" type=Text class="form-control" style=" text-align: center;" size=4,1>
-<span class="input-group-text" style=" text-align: left; font-family: 'D-DIN', sans-serif; font-size: 1.1em;">U<sub><font size="-2">&nbsp;total</font></sub>:</span>
+<span class="input-group-text" style=" text-align: left; font-family: 'D-DIN', sans-serif; font-size: 1.5em;">U<sub><font size="-1">&nbsp;total</font></sub>:</span>
 <input name="numUs" type=Text class="form-control" style=" text-align: center;" size=4,1>
-<span class="input-group-text" style=" text-align: left; font-family: 'D-DIN', sans-serif; font-size: 1.1em;">&Psi;<sub><font size="-2">&nbsp;total</font></sub>:</span>
+<span class="input-group-text" style=" text-align: left; font-family: 'D-DIN', sans-serif; font-size: 1.5em;">&Psi;<sub><font size="-1">&nbsp;total</font></sub>:</span>
 <input name="numWs" type=Text class="form-control" style=" text-align: center;" size=4,1>
-<span class="input-group-text" style=" text-align: left; font-family: 'D-DIN', sans-serif; font-size: 1.1em;">m<sup><font size="-2">1</font></sup>&Psi;<sub><font size="-2">&nbsp;total</font></sub>:</span>
+<span class="input-group-text" style=" text-align: left; font-family: 'D-DIN', sans-serif; font-size: 1.5em;">m<sup><font size="-1">1</font></sup>&Psi;<sub><font size="-1">&nbsp;total</font></sub>:</span>
 <input name="numm1Ws" type=Text class="form-control" style=" text-align: center;" size=4,1>
+<span class="input-group-text" style=" text-align: left; font-family: 'D-DIN', sans-serif; font-size: 1.5em;">m<sup><font size="-1">5</font></sup>C<sub><font size="-1">&nbsp;total</font></sub>:</span>
+<input name="numMs" type=Text class="form-control" style=" text-align: center;" size=4,1>
+</div>
+<h3><b>mRNA cap:</b></h3>
+<div class="input-group mb-3">
+<span class="input-group-text" style=" text-align: left; font-family: 'D-DIN', sans-serif; font-size: 1.5em;">No cap:</span>
+<span style=" text-align: left; font-family: 'D-DIN', sans-serif; font-size: 1.5em;">&nbsp;&nbsp;Monophosphate 5' end:&nbsp;&nbsp;</span>
+<input name ="mRNAcap" id="NMP" type="radio" checked>
+<span style=" text-align: left; font-family: 'D-DIN', sans-serif; font-size: 1.5em;">&nbsp;&nbsp;Triphosphate 5' end:&nbsp;&nbsp;</span>
+<input name = "mRNAcap" id="NTP" type="radio" > 
+</div>
+<div class="input-group mb-3">
+<span class="input-group-text" style=" text-align: left; font-family: 'D-DIN', sans-serif; font-size: 1.5em;"> G as first nucleotide:&nbsp;</span>
+<span style=" text-align: left; font-family: 'D-DIN', sans-serif; font-size: 1.5em;">&nbsp;&nbsp;Gppp<b>G</b>:&nbsp;&nbsp;</span>
+<input name ="mRNAcap" id="numGP3Gs" type="radio">
+<span style=" text-align: left; font-family: 'D-DIN', sans-serif; font-size: 1.5em;">&nbsp;&nbsp;m<sup><font size="-1">7</font></sup>Gppp<b>G</b>:&nbsp;&nbsp;</span>
+<input name ="mRNAcap" id="numm7GP3Gs" type="radio">
+<span style=" text-align: left; font-family: 'D-DIN', sans-serif; font-size: 1.5em;">&nbsp;&nbsp;ARCA (m<sub><font size="-1">2</font></sub><sup><font size="-1">7,3'-O</font></sup>Gppp<b>G</b>):&nbsp;&nbsp;</span>
+<input name ="mRNAcap" id="numARCAs" type="radio">
+<span style=" text-align: left; font-family: 'D-DIN', sans-serif; font-size: 1.5em;">&nbsp;&nbsp;m<sub><font size="-1">3</font></sub><sup><font size="-1">2.2.7</font></sup>Gppp<b>G</b>:&nbsp;&nbsp;</span>
+<input name ="mRNAcap" id="numm3227GP3Gs" type="radio">
+<span style=" text-align: left; font-family: 'D-DIN', sans-serif; font-size: 1.5em;">&nbsp;&nbsp;A cap (Appp<b>G</b>):&nbsp;&nbsp;</span>
+<input name ="mRNAcap" id="numAP3Gs" type="radio">
+</div>
+<div class="input-group mb-3">
+<span class="input-group-text" style=" text-align: left; font-family: 'D-DIN', sans-serif; font-size: 1.5em;"> A as first nucleotide:&nbsp;</span>
+<span style=" text-align: left; font-family: 'D-DIN', sans-serif; font-size: 1.5em;">&nbsp;&nbsp;Gppp<b>A</b>:&nbsp;&nbsp;</span>
+<input name ="mRNAcap" id="numGP3As" type="radio">
+<span style=" text-align: left; font-family: 'D-DIN', sans-serif; font-size: 1.5em;">&nbsp;&nbsp;m<sup><font size="-1">7</font></sup>Gppp<b>A</b>:&nbsp;&nbsp;</span>
+<input name ="mRNAcap" id="numm7GP3As" type="radio">
+<span style=" text-align: left; font-family: 'D-DIN', sans-serif; font-size: 1.5em;">&nbsp;&nbsp;m<sup><font size="-1">7</font></sup>Gpppm<sup><font size="-1">2'-O</font></sup><b>A</b>:&nbsp;&nbsp;</span>
+<input name ="mRNAcap" id="numm7GP3m2OAs" type="radio">
+<span style=" text-align: left; font-family: 'D-DIN', sans-serif; font-size: 1.5em;">&nbsp;&nbsp;m<sub><font size="-1">3</font></sub><sup><font size="-1">2.2.7</font></sup>Gppp<b>A</b>:&nbsp;&nbsp;</span>
+<input name ="mRNAcap" id="numm3227GP3As" type="radio">
+<span style=" text-align: left; font-family: 'D-DIN', sans-serif; font-size: 1.5em;">&nbsp;&nbsp;ARCA analog (m<sub><font size="-1">2</font></sub><sup><font size="-1">7,3'-O</font></sup>Gpppm<sup><font size="-1">2'-O</font></sup><b>A</b>):&nbsp;&nbsp;</span>
+<input name ="mRNAcap" id="numARCAanalogs" type="radio"> 
 </div><td><td><td>
 <tr>
 <td><td><td><td><td><td><td><td><td><td><td><td><td>
 
 
 </table>
+<td><input type=Button class="btn btn-outline-success" value="Load example" onClick="LoadExample()" style=" font-size: 1.3em; color: black;" ><td>
 <td><input type=Button class="btn btn-outline-success" value="Calculate" onClick="ExtCoeff()" style=" font-size: 1.3em; color: teal;" ><td>
 <td><input name="reset" type=Reset class="btn btn-outline-success" value="Reset" onClick="window.location.reload()" style=" font-size: 1.3em; color: red;"> 
+<div id="results" class="wrapper">
 <table>
 	<tr>
 	<hr>
+	
 	<h2>Results</h2>
 	<td align="right">RNA length:<td>
-		<input name="numNts" class="form-control" type=Text placeholder="requires RNA sequence input"  size=30,1>
+		<input name="numNts" class="form-control" type=Text size=30,1>
 	<tr>
 	<td align="right">RNA Molecular Weight (g/mol)<sup>*</sup>:<td>
-		<input name="totalMW" class="form-control" type=Text placeholder="requires RNA sequence input" size=30,1>
+		<input name="totalMW" class="form-control" type=Text size=30,1>
 	<tr>
 	<td align="right">Extinction coefficient, &#949;<sub><font size="-2">260</font></sub> (mM<sup><font size="-2">-1</font></sup> cm<sup><font size="-2">-1</font></sup>)<sup>+</sup>:<td>
-		<input name="mMolarExtCoeff" class="form-control" type=Text placeholder="requires RNA sequence input" size=30,1>
+		<input name="mMolarExtCoeff" class="form-control" type=Text size=30,1>
 	<tr>
 	<td align="right"><b> Stock Concentration (nM):</b><td>
-		<input name="stockConc" class="form-control" type=Text placeholder="requires A260 input" size=30,1>
+		<input name="stockConc" class="form-control" type=Text size=30,1>
 	<tr>
-	<td align="right"><b>Stock Concentration (ng/µl):</b><td>
-		<input name="stockConcugul" class="form-control" type=Text placeholder="requires A260 input"  size=30,1>
+	<td align="right"><b>Stock Concentration (ng/&#956;l):</b><td>
+		<input name="stockConcugul" class="form-control" type=Text size=30,1>
 	<tr>
-	<td align="right">Total RNA mass (µmole):<td>
-	<input name="totalmicromols" class="form-control" type=Text placeholder="requires Stock volume input"  size=30,1>
+	<td align="right">Total RNA mass (&#956;mole):<td>
+	<input name="totalmicromols" class="form-control" type=Text size=30,1>
 	<tr>
-	<td align="right">Total RNA mass (µg):<td>
-		<input name="totalMass" class="form-control" type=Text placeholder="requires Stock volume input" size=20,1>
+	<td align="right">Total RNA mass (&#956;g):<td>
+		<input name="totalMass" class="form-control" type=Text size=20,1>
 	<tr>
-	</div>
-</table>
+	</table>
+</div>
 </form>
 <hr>
 	<h2><button id="show_parameters" onClick="toggle('parameters')">Parameters</button></h2>
@@ -437,31 +711,65 @@ function plotRegressionChart(x_values, y_values, y_hat, r2){
 <table>
 <form name="parameters">
 <tr>
-<b><sup>*</sup>Molecular Weight for individual NMPs:</b><br>
+<b><sup>*</sup>Molecular Weight for RNA-incorporated NMPs and mRNA cap di-nucleotides:</b>
+<br>NMP MW = free acid NMP (or mRNAcap MW) - H<sub>2</sub>O MW (18.01528)
 <table>
 	<tr>
 	<td align="right"> A :<td>
-		<input name="aMW" value="347.22" type=Text size=10,1> g/mol  (Pubchem = 6083)
+		<input name="aMW" value="329.20592" type=Text size=10,1> g/mol <a href="https://pubchem.ncbi.nlm.nih.gov/compound/6083">Pubchem = 6083</a>
 	<tr>
 	<td align="right"> G :<td>
-		<input name="gMW" value="363.22" type=Text size=10,1> g/mol  (Pubchem = 6083)
+		<input name="gMW" value="345.20554" type=Text size=10,1> g/mol <a href="https://pubchem.ncbi.nlm.nih.gov/compound/135398631">Pubchem = 135398631</a>
 	<tr>
 	<td align="right"> U :<td>
-		<input name="uMW" value="323.19" type=Text size=10,1> g/mol  (Pubchem = 1778309)
+		<input name="uMW" value="306.16608" type=Text size=10,1> g/mol <a href="https://pubchem.ncbi.nlm.nih.gov/compound/6030">Pubchem = 6030</a>
 	<tr>
 	<td align="right"> C :<td> 
-		<input name="cMW" value="322.17" type=Text size=10,1> g/mol  (Pubchem = 6031)
+		<input name="cMW" value="305.18136" type=Text size=10,1> g/mol <a href="https://pubchem.ncbi.nlm.nih.gov/compound/6031">Pubchem = 6031</a>
 	<tr>
 	<td align="right">&nbsp;&Psi;&nbsp;:<td>
-		<input name="wMW" value="324.18" type=Text size=10,1> g/mol (Pubchem = 439424)
+		<input name="wMW" value="306.16608" type=Text size=10,1> g/mol <a href="https://pubchem.ncbi.nlm.nih.gov/compound/439424">Pubchem = 439424</a>
 	<tr>
 	<td align="right">m<sup><font size="-2">1</font></sup>&Psi;:<td>
-		<input name="yMW" value="338.21" type=Text size=10,1> g/mol  (Pubchem = 71668267)
+		<input name="yMW" value="320.19372" type=Text size=10,1> g/mol <a href="https://pubchem.ncbi.nlm.nih.gov/compound/71668267">Pubchem = 71668267</a>
+	<tr>
+	<td align="right">m<sup><font size="-2">5</font></sup>C:<td>
+		<input name="mMW" value="319.207822" type=Text size=10,1> g/mol Computed from chemical formula: C<sub>10</sub>H<sub>14</sub>N<sub>3</sub>O<sub>7</sub>P
+	<tr>
+	<td align="right">GpppG:<td>
+		<input name="GP3GMW" value="770.390586" type=Text size=10,1> g/mol Computed from chemical formula: C<sub>20</sub>H<sub>27</sub>N<sub>10</sub>O<sub>18</sub>P<sub>3</sub>
+	<tr>
+	<td align="right">m<sup><font size="-2">7</font></sup>GpppG:<td>
+		<input name="m7GP3GMW" value="785.425106" type=Text size=10,1> g/mol Computed from chemical formula: C<sub>21</sub>H<sub>30</sub>N<sub>10</sub>O<sub>18</sub>P<sub>3</sub>
+	<tr>
+	<td align="right">ARCA (m<sub><font size="-2">2</font></sub><sup><font size="-2">7,3'-O</font></sup>GpppG):<td>
+		<input name="ARCAMW" value="799.451686" type=Text size=10,1> g/mol Computed from chemical formula: C<sub>22</sub>H<sub>32</sub>N<sub>10</sub>O<sub>18</sub>P<sub>3</sub>
+	<tr>
+	<td align="right">m<sub><font size="-2">3</font></sub><sup><font size="-2">2.2.7</font></sup>GpppG:<td>
+		<input name="m3227GP3GMW" value="813.478266" type=Text size=10,1> g/mol Computed from chemical formula: C<sub>23</sub>H<sub>34</sub>N<sub>10</sub>O<sub>18</sub>P<sub>3</sub>
+	<tr>
+	<td align="right">A cap (ApppG):<td> 
+		<input name="AP3GMW" value="754.391186" type=Text size=10,1> g/mol Computed from chemical formula: C<sub>20</sub>H<sub>27</sub>N<sub>10</sub>O<sub>17</sub>P<sub>3</sub>
+	<tr>
+	<td align="right">GpppA:<td>
+	<input name="GP3AMW" value="754.391186" type=Text size=10,1> g/mol Computed from chemical formula: C<sub>20</sub>H<sub>27</sub>N<sub>10</sub>O<sub>17</sub>P<sub>3</sub>
+	<tr>
+	<td align="right">m<sup><font size="-2">7</font></sup>GpppA:<td>
+		<input name="m7GP3AMW" value="769.425706" type=Text size=10,1> g/mol Computed from chemical formula: C<sub>21</sub>H<sub>30</sub>N<sub>10</sub>O<sub>17</sub>P<sub>3</sub>
+	<tr>
+	<td align="right">m<sup><font size="-2">7</font></sup>Gpppm<sup><font size="-2">2'-O</font></sup>A:<td> 
+		<input name="m7GP3m2OAMW" value="783.452286" type=Text size=10,1> g/mol Computed from chemical formula: C<sub>22</sub>H<sub>32</sub>N<sub>10</sub>O<sub>17</sub>P<sub>3</sub>
+	<tr>
+	<td align="right">m<sub><font size="-2">3</font></sub><sup><font size="-2">2.2.7</font></sup>GpppA:<td>
+		<input name="m3227GP3AMW" value="797.478866" type=Text size=10,1> g/mol Computed from chemical formula: C<sub>23</sub>H<sub>34</sub>N<sub>10</sub>O<sub>17</sub>P<sub>3</sub>
+	<tr>
+	<td align="right">ARCA analog (m<sub><font size="-2">2</font></sub><sup><font size="-2">7,3'-O</font></sup>Gpppm<sup><font size="-2">2'-O</font></sup>A):<td>
+		<input name="ARCAanalogMW" value="797.478866" type=Text size=10,1> g/mol  Computed from chemical formula: C<sub>23</sub>H<sub>34</sub>N<sub>10</sub>O<sub>17</sub>P<sub>3</sub>
 	<tr>
 </table>
 
 <br> </b><td> 
-<b><sup>+</sup>Extinction coefficients (&epsilon; <sub><font size="-2">260</font></sub>) for individual NMPs:</b><br>
+<b><sup>+</sup>Extinction coefficients (&epsilon; <sub><font size="-2">260</font></sub>) for individual NMPs and mRNA cap di-nucleotides:</b><br>
 
 <table>
 	<tr>
@@ -481,18 +789,55 @@ function plotRegressionChart(x_values, y_values, y_hat, r2){
 		<input name="wEC" value="7.49" type=Text size=10,1> mM<sup><font size="-2">-1</font></sup> cm<sup><font size="-2">-1</font></sup>
 	<tr>
 	<td align="right">m<sup><font size="-2">1</font></sup>&Psi;:<td>
-		<input name="yEC" value="6.82" type=Text size=10,1> mM<sup><font size="-2">-1</font></sup> cm<sup><font size="-2">-1</font></sup>
+		<input name="yEC" value="5.81" type=Text size=10,1> mM<sup><font size="-2">-1</font></sup> cm<sup><font size="-2">-1</font></sup>
 	<tr>
+		<tr>
+	<td align="right">m<sup><font size="-2">5</font></sup>C:<td>
+		<input name="mEC" value="5.78" type=Text size=10,1> mM<sup><font size="-2">-1</font></sup> cm<sup><font size="-2">-1</font></sup>
+	<tr>
+		<td align="right">GpppG:<td>
+		<input name="GP3GEC" value="24.16" type=Text size=10,1> mM<sup><font size="-2">-1</font></sup> cm<sup><font size="-2">-1</font></sup>
+	<tr>
+	<td align="right">m<sup><font size="-2">7</font></sup>GpppG:<td>
+		<input name="m7GP3GEC" value="22.31" type=Text size=10,1> mM<sup><font size="-2">-1</font></sup> cm<sup><font size="-2">-1</font></sup>
+	<tr>
+	<td align="right">ARCA (m<sub><font size="-2">2</font></sub><sup><font size="-2">7,3'-O</font></sup>GpppG):<td>
+		<input name="ARCAEC" value="20.46" type=Text size=10,1>  mM<sup><font size="-2">-1</font></sup> cm<sup><font size="-2">-1</font></sup>
+	<tr>
+	<td align="right">m<sub><font size="-2">3</font></sub><sup><font size="-2">2.2.7</font></sup>GpppG:<td>
+		<input name="m3227GP3GEC" value="21.6" type=Text size=10,1> mM<sup><font size="-2">-1</font></sup> cm<sup><font size="-2">-1</font></sup>
+	<tr>
+	<td align="right">ApppG:<td>
+		<input name="AP3GEC" value="27.1" type=Text size=10,1> mM<sup><font size="-2">-1</font></sup> cm<sup><font size="-2">-1</font></sup>
+	<tr>
+	<td align="right">GpppA:<td>
+	<input name="GP3AEC" value="27.1" type=Text size=10,1> mM<sup><font size="-2">-1</font></sup> cm<sup><font size="-2">-1</font></sup>
+	<tr>
+	<td align="right">m<sup><font size="-2">7</font></sup>GpppA:<td>
+		<input name="m7GP3AEC" value="25.25" type=Text size=10,1>  mM<sup><font size="-2">-1</font></sup> cm<sup><font size="-2">-1</font></sup>
+	<tr>
+	<td align="right">m<sup><font size="-2">7</font></sup>Gpppm<sup><font size="-2">2'-O</font></sup>A:<td> 
+		<input name="m7GP3m2OAEC" value="23.43" type=Text size=10,1> mM<sup><font size="-2">-1</font></sup> cm<sup><font size="-2">-1</font></sup>
+	<tr>
+	<td align="right">m<sub><font size="-2">3</font></sub><sup><font size="-2">2.2.7</font></sup>GpppA:<td>
+		<input name="m3227GP3AEC" value="24.54" type=Text size=10,1>  mM<sup><font size="-2">-1</font></sup> cm<sup><font size="-2">-1</font></sup>
+	<tr>
+	<td align="right">ARCA analog (m<sub><font size="-2">2</font></sub><sup><font size="-2">7,3'-O</font></sup>Gpppm<sup><font size="-2">2'-O</font></sup>A):<td>
+		<input name="ARCAanalogEC" value="20.28" type=Text size=10,1>  mM<sup><font size="-2">-1</font></sup> cm<sup><font size="-2">-1</font></sup>
+	<tr>
+	
 </table>
 </form>
-These parameters can be modified by users, default values will return after refreshing the website.<br><br>
-<b>Source:</b><br> Biochim Biophys Acta. 1959 Apr;32:393-406. Nucleic Acids Res. 2004; 32(1): e13. Nucleic Acids Res. 2016: 44 (3), e26<br>
+These parameters can be modified by users, default values will return after refreshing (ctrl + r) this website.<br><br>
+<b>Source:</b><br> <a href="https://pubmed.ncbi.nlm.nih.gov/13846687/">Biochim Biophys Acta.</a> 1959 Apr;32:393-406. <br>
+<a href="https://academic.oup.com/nar/article/32/1/e13/1195443">Nucleic Acids Res.</a> 2004; 32(1): e13.<br> 
+<a href="https://academic.oup.com/nar/article/44/3/e26/2503062">Nucleic Acids Res.</a> 2016: 44 (3), e26<br>
 <td> <tr> 
 </table>
 </div> 
 <hr>
-The source code can be found in the following <a href="/link/to/github">Github repository</a> under GNU licence.<br>
-For enquiries or requests, feel free to contact me via email: esteban dot finol at duke-nus dot com 
+The source code can be found in the following <a href="https://github.com/estebanfbfc/mRNACalc">Github repository</a> under GNU General Public licence.<br>
+For enquiries or requests, feel free to contact me via email: esteban dot finol at duke-nus dot edu dot sg 
 </div>
 	</body>
 </html>
