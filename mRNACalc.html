@@ -9,7 +9,7 @@
 		<link rel="icon" type="image/x-icon" href="/images/favicon.svg">
 		<meta name="viewport" content="width=device-width, initial-scale=1">
 		<meta charset="utf-8">
-		<meta name="description" content="Caculate extinction coefficient for mRNAs with pseudoUridine and N1-MethylpseudoUridine"/>
+		<meta name="description" content="Caculate extinction coefficient for mRNAs with pseudouridine and N1-methylpseudouridine"/>
 	<style type="text/css">
 			body{text-align: center;font-family: 'D-DIN', sans-serif;font-size: 1em;}
 			#top_div{width:100%;top:0px;left: 0px; background-color: teal;}
@@ -232,7 +232,7 @@ function plotRegressionChart(x_values, y_values, y_hat, r2){
 	}
 	// selecting parameters for modified Cytidine nucleosides
 	if ( document.getElementById('CTP').checked == true ) {
-	numMs = 0;
+	numMs = numMs;
 	}
 	else if ( document.getElementById('m5CTP').checked == true ) {
 	cMW = mMW, cExtCoeff = mExtCoeff, numMs = numCs, numCs = 0 ;
@@ -377,7 +377,7 @@ function toggle2(elementId) {
 	An experimental protocol is provided, along with the required calculating tools, for measuring the 260 nm absorbance of mRNAs and calculating mRNA concentrations.<br>
 	The calculations in this web server and the photometric measurement of RNA concentrations are based on the intrinsic UV absorptivity properties of single monophosphate nucleotides.
 	<br><br><b>This website is free and open to all users and there is no login requirement.</b>
-	<br><br>If you use this protocol and webserver, please cite: <a href="/link/to/article/inJournal.htm">Journal link will be here</a>
+	<br><br>If you use this protocol and webserver, please cite: <a href="https://www.biorxiv.org/content/10.1101/2023.07.27.550903v3"> peer-reviewed Biorxiv pre-print article</a>
 	
 	<br></h3>
  <hr>
@@ -583,7 +583,7 @@ function toggle2(elementId) {
 <tr>
  <div class="input-group mb-3">
       <span class="input-group-text" style=" text-align: left; font-family: 'D-DIN', sans-serif; font-size: 1.5em;">RNA Sequence:</span>
-      <textarea name="seq" cols="100" rows="15" class="form-control" placeholder="Input your RNA sequence here.&#10;&#10;&#10;Use the standard nomenclature for RNA: G, A, C and U.&#10;A DNA sequence can serve as input, T will be regarded as U.&#10;Upper and lowercase are accepted, spaces will be ignored.&#10;For modified nucleosides, use the stadard nomemclature and select the correponding modifications in the section below &#10; &#10;&#10; If the mRNA is capped, do not include the capping nucleotide in the input sequence.&#10; Select the coresponding mRNA cap below and hit 'Calculate'"></textarea>
+      <textarea name="seq" cols="100" rows="18" class="form-control" placeholder="Input your RNA sequence here.&#10;Use the standard nomenclature for RNA: G, A, C and U. A DNA sequence can also serve as input, T will be regarded as U.&#10;Upper and lowercase are accepted, spaces will be ignored.&#10;&#10;For modified nucleosides, use the nomenclature for standard nucleosides (A, U or T, C and G) and select the corresponding modifications in the section below.&#10;Alternatively, replace the standard nucleosides with the modified nucleosides in the input sequence using the following nomenclature for modified nucleosides:&#10;W = pseudouridine (&Psi;)&#10;Y = N1-methylpseudouridine (m&sup1;Ψ)&#10;M = 5-methylcytidine (m&#8309;C)&#10;&#10;If the mRNA is capped, do not include the capping nucleotide in the input sequence and select the corresponding mRNA cap in the section below.&#10;&#10;Provide or calculate (see protocols) the A260 value for the hidrolyzed RNA.&#10;Provide the volume of your mRNA stock solution ('Stock volume') in &#956;l to obtain the total RNA mass values (in &#956;mole and &#956;g)&#10;&#10;hit 'Calculate'"></textarea>
  </div>
 </table>
 <table border=0>
@@ -786,14 +786,14 @@ function toggle2(elementId) {
 		<input name="cEC" value="7.07" type=Text size=10,1> mM<sup><font size="-2">-1</font></sup> cm<sup><font size="-2">-1</font></sup>
 	<tr>
 	<td align="right">&nbsp;&Psi;&nbsp;:<td>
-		<input name="wEC" value="7.49" type=Text size=10,1> mM<sup><font size="-2">-1</font></sup> cm<sup><font size="-2">-1</font></sup>
+		<input name="wEC" value="7.72" type=Text size=10,1> mM<sup><font size="-2">-1</font></sup> cm<sup><font size="-2">-1</font></sup>
 	<tr>
 	<td align="right">m<sup><font size="-2">1</font></sup>&Psi;:<td>
 		<input name="yEC" value="5.81" type=Text size=10,1> mM<sup><font size="-2">-1</font></sup> cm<sup><font size="-2">-1</font></sup>
 	<tr>
 		<tr>
 	<td align="right">m<sup><font size="-2">5</font></sup>C:<td>
-		<input name="mEC" value="5.78" type=Text size=10,1> mM<sup><font size="-2">-1</font></sup> cm<sup><font size="-2">-1</font></sup>
+		<input name="mEC" value="5.60" type=Text size=10,1> mM<sup><font size="-2">-1</font></sup> cm<sup><font size="-2">-1</font></sup>
 	<tr>
 		<td align="right">GpppG:<td>
 		<input name="GP3GEC" value="24.16" type=Text size=10,1> mM<sup><font size="-2">-1</font></sup> cm<sup><font size="-2">-1</font></sup>
